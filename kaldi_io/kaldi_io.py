@@ -11,21 +11,34 @@ import numpy as np
 import sys, os, re, gzip, struct
 
 #################################################
-# Adding kaldi tools to shell path,
+# Adding 'kaldi binaries' to shell path,
 
 # Select kaldi,
 if not 'KALDI_ROOT' in os.environ:
     # Default! To change run python with 'export KALDI_ROOT=/some_dir python'
     os.environ['KALDI_ROOT']='/mnt/matylda5/iveselyk/Tools/kaldi-trunk'
 
-# Add kaldi tools to path,
-path = os.popen('echo $KALDI_ROOT/src/bin:$KALDI_ROOT/tools/openfst/bin:$KALDI_ROOT/src/fstbin/:$KALDI_ROOT/src/gmmbin/:$KALDI_ROOT/src/featbin/:$KALDI_ROOT/src/lm/:$KALDI_ROOT/src/sgmmbin/:$KALDI_ROOT/src/sgmm2bin/:$KALDI_ROOT/src/fgmmbin/:$KALDI_ROOT/src/latbin/:$KALDI_ROOT/src/nnetbin:$KALDI_ROOT/src/nnet2bin:$KALDI_ROOT/src/nnet3bin:$KALDI_ROOT/src/online2bin/:$KALDI_ROOT/src/ivectorbin/:$KALDI_ROOT/src/lmbin/')
-os.environ['PATH'] = path.readline().strip() + ':' + os.environ['PATH']
-path.close()
+# See if the path exists,
+if not os.path.exists(os.environ['KALDI_ROOT']):
+    print(80*"#", file=sys.stderr)
+    print("### WARNING, path does not exist: KALDI_ROOT=%s" % os.environ['KALDI_ROOT'], file=sys.stderr)
+    print("###          (please add 'export KALDI_ROOT=<your_path>' in your $HOME/.profile)", file=sys.stderr)
+    print("###          (or run as: KALDI_ROOT=<your_path> python <your_script>.py)", file=sys.stderr)
+    print(80*"#"+"\n", file=sys.stderr)
+
+# Add 'kaldi binaries' to shell path,
+try:
+    path = os.popen('echo $KALDI_ROOT/src/bin:$KALDI_ROOT/tools/openfst/bin:$KALDI_ROOT/src/fstbin/:$KALDI_ROOT/src/gmmbin/:$KALDI_ROOT/src/featbin/:$KALDI_ROOT/src/lm/:$KALDI_ROOT/src/sgmmbin/:$KALDI_ROOT/src/sgmm2bin/:$KALDI_ROOT/src/fgmmbin/:$KALDI_ROOT/src/latbin/:$KALDI_ROOT/src/nnetbin:$KALDI_ROOT/src/nnet2bin:$KALDI_ROOT/src/nnet3bin:$KALDI_ROOT/src/online2bin/:$KALDI_ROOT/src/ivectorbin/:$KALDI_ROOT/src/lmbin/')
+    os.environ['PATH'] = path.readline().strip() + ':' + os.environ['PATH']
+    path.close()
+except:
+    print(80*"#", file=sys.stderr)
+    print("### WARNING: could not modify $PATH, (and add the kaldi binaries...)", file=sys.stderr)
+    print(80*"#"+"\n", file=sys.stderr)
 
 
 #################################################
-# Define all custom exceptions,
+# Define all 'kaldi_io' exceptions,
 class UnsupportedDataType(Exception): pass
 class UnknownVectorHeader(Exception): pass
 class UnknownMatrixHeader(Exception): pass
