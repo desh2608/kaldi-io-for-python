@@ -16,7 +16,8 @@ import sys, os, re, gzip, struct
 # Select kaldi,
 if not 'KALDI_ROOT' in os.environ:
     # Default! To change run python with 'export KALDI_ROOT=/some_dir python'
-    os.environ['KALDI_ROOT']='/mnt/matylda5/iveselyk/Tools/kaldi-trunk'
+    print("Added KALDI_ROOT in your python environment.")
+    sys.exit(1)
 
 # See if the path exists,
 if not os.path.exists(os.environ['KALDI_ROOT']):
@@ -794,3 +795,52 @@ def read_segments_as_bool_vec(segments_file, return_key=False):
     else:
         return frms
 
+#################################################
+# Following code added by Lukas Burget
+
+def _read_vec_binary(fd):
+    # Data type,
+    type = fd.read(3)
+    if type == b'FV ': sample_size = 4 # floats
+    if type == b'DV ': sample_size = 8 # doubles
+    assert(sample_size > 0)
+    # Dimension,
+    assert(fd.read(1) == b'\4'); # int-size
+    vec_size = struct.unpack('<i', fd.read(4))[0] # vector dim
+    # Read whole vector,
+    buf = fd.read(vec_size * sample_size)
+    if sample_size == 4 : ans = np.frombuffer(buf, dtype='float32')
+    elif sample_size == 8 : ans = np.frombuffer(buf, dtype='float64')
+    else : raise BadSampleSize
+    return ans
+
+
+def read_plda(file_or_fd):
+    """ Loads PLDA from a file in kaldi format (binary or text).
+    Input:
+        file_or_fd - file name or file handle with kaldi PLDA model.
+    Output:    
+        Tuple (mu, tr, psi) defining a PLDA model using the kaldi parametrization: 
+        mu  - mean vector
+        tr  - transform whitening within- and diagonalizing across-class covariance matrix
+        psi - diagonal of the across-class covariance in the transformed space
+    """
+    fd = open_or_fd(file_or_fd)
+    try:
+      binary = fd.read(2)
+      if binary == b'\x00B':
+        assert(fd.read(7) == b'<Plda> ')
+        plda_mean = _read_vec_binary(fd)
+        plda_trans = _read_mat_binary(fd)
+        plda_psi = _read_vec_binary(fd)
+      else:
+        assert(binary+fd.read(5) == b'<Plda> ')
+        #plda_mean = _read_vec_ascii(fd, binary)
+        plda_mean = np.array(fd.readline().strip(' \n[]').split(), dtype=float)
+        assert(fd.read(2) == b' [')
+        plda_trans = _read_mat_ascii(fd)
+        plda_psi = np.array(fd.readline().strip(' \n[]').split(), dtype=float)
+      assert(fd.read(8) == b'</Plda> ')
+    finally:
+      if fd is not file_or_fd: fd.close()
+    return plda_mean, plda_trans, plda_psi
