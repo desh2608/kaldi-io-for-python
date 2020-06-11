@@ -4,6 +4,9 @@
 # Copyright 2014-2020 Brno University of Technology (author: Karel Vesely)
 # Licensed under the Apache License, Version 2.0 (the "License")
 
+# IMPORTANT: This is the modified version of kaldi_io taken from:
+# https://github.com/BUTSpeechFIT/VBx/blob/master/kaldi_io.py
+
 from __future__ import print_function
 from __future__ import division
 
